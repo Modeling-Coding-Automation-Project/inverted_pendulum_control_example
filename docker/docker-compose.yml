@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  mcap_env:
+    image: ghcr.io/modeling-coding-automation-project/mcap_env
+    container_name: inverted_pendulum_control_example_env_container
+    restart: unless-stopped
+    tty: true

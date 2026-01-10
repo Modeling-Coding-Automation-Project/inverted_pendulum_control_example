@@ -1,0 +1,36 @@
+[submodule "external_libraries/base_utility_cpp"]
+	path = external_libraries/base_utility_cpp
+	url = https://github.com/Modeling-Coding-Automation-Project/base_utility_cpp.git
+[submodule "external_libraries/MCAP_python_control"]
+	path = external_libraries/MCAP_python_control
+	url = https://github.com/Modeling-Coding-Automation-Project/MCAP_python_control.git
+[submodule "external_libraries/MCAP_python_mpc"]
+	path = external_libraries/MCAP_python_mpc
+	url = https://github.com/Modeling-Coding-Automation-Project/MCAP_python_mpc.git
+[submodule "external_libraries/MCAP_python_optimization"]
+	path = external_libraries/MCAP_python_optimization
+	url = https://github.com/Modeling-Coding-Automation-Project/MCAP_python_optimization.git
+[submodule "external_libraries/MCAP_tester"]
+	path = external_libraries/MCAP_tester
+	url = https://github.com/Modeling-Coding-Automation-Project/MCAP_tester.git
+[submodule "external_libraries/python_control_to_cpp"]
+	path = external_libraries/python_control_to_cpp
+	url = https://github.com/Modeling-Coding-Automation-Project/python_control_to_cpp.git
+[submodule "external_libraries/python_math_to_cpp"]
+	path = external_libraries/python_math_to_cpp
+	url = https://github.com/Modeling-Coding-Automation-Project/python_math_to_cpp.git
+[submodule "external_libraries/python_mpc_to_cpp"]
+	path = external_libraries/python_mpc_to_cpp
+	url = https://github.com/Modeling-Coding-Automation-Project/python_mpc_to_cpp.git
+[submodule "external_libraries/python_numpy_to_cpp"]
+	path = external_libraries/python_numpy_to_cpp
+	url = https://github.com/Modeling-Coding-Automation-Project/python_numpy_to_cpp.git
+[submodule "external_libraries/python_optimization_to_cpp"]
+	path = external_libraries/python_optimization_to_cpp
+	url = https://github.com/Modeling-Coding-Automation-Project/python_optimization_to_cpp.git
+[submodule "external_libraries/simulation_manager"]
+	path = external_libraries/simulation_manager
+	url = https://github.com/Modeling-Coding-Automation-Project/simulation_manager.git
+[submodule "external_libraries/MCAP_Playground"]
+	path = external_libraries/MCAP_Playground
+	url = https://github.com/Modeling-Coding-Automation-Project/MCAP_Playground.git

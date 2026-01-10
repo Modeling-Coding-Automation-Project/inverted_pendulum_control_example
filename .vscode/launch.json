@@ -1,0 +1,56 @@
+/* VS Code debug configurations for C++ and for running Python under gdb
+ * so you can step into pybind11 / native C++ code when importing from Python. */
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Active C++ File",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/${fileBasenameNoExtension}",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "Build Active C++ File"
+    },
+    {
+      "name": "Run without Debug Active C++ File",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/${fileBasenameNoExtension}",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+  "preLaunchTask": "Build without Debug Active C++ File"
+    },
+    {
+      "name": "Debug C++ in Python (gdb)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "/opt/venv_py_MCAP/bin/python3",
+      "args": ["${file}"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "setupCommands": [
+        { "description": "Enable pretty-printing", "text": "-enable-pretty-printing", "ignoreFailures": true }
+      ]
+    }
+  ]
+}
