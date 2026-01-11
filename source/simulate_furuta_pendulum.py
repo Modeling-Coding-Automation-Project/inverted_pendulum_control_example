@@ -10,6 +10,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider
 
+from external_libraries.simulation_manager.visualize.simulation_plotter import SimulationPlotter
+
 from source.plant.furuta_pendulum_plant_model import (
     FurutaPendulum,
     params,
@@ -49,12 +51,15 @@ t_sim, X_sim = model.simulate(
 print(f"Simulation complete. {len(t_sim)} time steps.")
 
 # シミュレーション結果から theta, alpha を抽出
-t = t_sim
+time_series = t_sim
 theta = X_sim[:, 0]  # arm angle
 alpha = X_sim[:, 1]  # pendulum angle
-N = len(t)
-dt = t[1] - t[0] if len(t) > 1 else SIMULATION_TIME_STEP
+voltage = model.input_value_series
+voltage_time = model.input_time_series
 
+N = len(time_series)
+dt = time_series[1] - \
+    time_series[0] if len(time_series) > 1 else SIMULATION_TIME_STEP
 # Quick check prints
 print("Final state:", X_sim[-1])
 print("Max |alpha| [deg]:", np.rad2deg(np.max(np.abs(alpha))))
@@ -127,7 +132,7 @@ def draw(i):
     pend_line.set_data([x_arm, x_p], [y_arm, y_p])
     pend_line.set_3d_properties([z_arm, z_p])
 
-    time_text.set_text(f"t = {t[i]:.2f} [s]")
+    time_text.set_text(f"t = {time_series[i]:.2f} [s]")
 
     fig.canvas.draw_idle()
 
@@ -192,15 +197,29 @@ def on_time_slider(val):
 
 slider_time.on_changed(on_time_slider)
 
-# 初期描画
+# 3D描画
 draw(0)
-
-
 dt_sample = dt if N > 1 else SIMULATION_TIME_STEP
 playback_step = max(1, int(round((1.0 / PLAYBACK_FPS) / dt_sample)))
 
 timer = fig.canvas.new_timer(interval=int(1000.0 / PLAYBACK_FPS))
 timer.add_callback(update_timer)
 timer.start()
+
+# 波形表示
+plotter = SimulationPlotter()
+
+plotter.append_sequence_name(theta, "theta")
+plotter.append_sequence_name(alpha, "alpha")
+plotter.append_sequence_name(voltage, "voltage")
+
+plotter.assign("theta", column=0, row=0, position=(0, 0),
+               x_sequence=time_series, label="theta")
+plotter.assign("alpha", column=0, row=0, position=(1, 0),
+               x_sequence=time_series, label="alpha")
+plotter.assign("voltage", column=0, row=0, position=(2, 0),
+               x_sequence=voltage_time, label="voltage")
+
+plotter.pre_plot(suptitle="Furuta Pendulum Simulation Results")
 
 plt.show()
