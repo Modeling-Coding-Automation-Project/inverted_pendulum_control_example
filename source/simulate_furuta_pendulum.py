@@ -41,7 +41,11 @@ sampled_controller = SampledController(0.005, feedback_law, sat=(-12.0, 12.0))
 
 print("Running simulation...")
 t_sim, X_sim = model.simulate(
-    x0, (0.0, SIMULATION_END_TIME), sampled_controller, dt=SIMULATION_TIME_STEP)
+    x0=x0,
+    t_span=(0.0, SIMULATION_END_TIME),
+    v_func=sampled_controller,
+    v_func_time_step=sampled_controller.Ts,
+    dt=SIMULATION_TIME_STEP)
 print(f"Simulation complete. {len(t_sim)} time steps.")
 
 # シミュレーション結果から theta, alpha を抽出

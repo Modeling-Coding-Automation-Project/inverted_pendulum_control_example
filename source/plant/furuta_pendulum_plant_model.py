@@ -23,6 +23,9 @@ class FurutaPendulum:
     def __init__(self, params: dict, use_alt_backemf=False, use_alt_arm_damping=False):
         self.p = dict(params)
 
+        self.input_time_series = []
+        self.input_value_series = []
+
         # Build lambdified dynamics
         self._build_symbolic_model()
 
@@ -190,14 +193,33 @@ class FurutaPendulum:
 
         return np.array([thd, ald, float(thdd), float(aldd), float(di)], dtype=float)
 
-    def simulate(self, x0, t_span, v_func, dt=0.001, rtol=1e-7, atol=1e-9):
+    def simulate(
+        self,
+        x0,
+        t_span,
+        v_func,
+        v_func_time_step,
+        dt=0.001,
+        rtol=1e-7,
+        atol=1e-9
+    ):
         """
         Simulate with input voltage v_func(t, x)->v.
         Returns t, X arrays.
         """
+        v_func_time_count = 0.0
+
         def f(t, x):
+            nonlocal v_func_time_count
+
             v = v_func(t, x)
             v_saturated = max(self.p["V_min"], min(self.p["V_max"], v))
+
+            if t >= v_func_time_count:
+                self.input_time_series.append(t)
+                self.input_value_series.append(v_saturated)
+
+                v_func_time_count += v_func_time_step
 
             return self.dynamics(t, x, v_saturated)
 
