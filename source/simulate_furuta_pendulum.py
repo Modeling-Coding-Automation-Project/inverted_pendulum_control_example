@@ -18,6 +18,8 @@ from source.plant.furuta_pendulum_plant_model import (
     SampledController,
 )
 
+from source.controller.furuta_pendulum_pid_controller import FurutaPendulum_PID_Controller
+
 SIMULATION_TIME_STEP = 0.001  # シミュレーションの時間刻み幅（秒）
 SIMULATION_END_TIME = 5.0    # シミュレーションの終了時間（秒）
 PLAYBACK_FPS = 200  # 3Dプロット再生時のフレームレート（FPS）
@@ -34,11 +36,23 @@ print("Model built successfully.")
 
 # Initial condition: pendulum tilted 45 degrees from upright
 # x = [theta, alpha, theta_dot, alpha_dot, i]
-x0 = [0.0, np.deg2rad(45.0), 0.0, 0.0, 0.0]
+x0 = [0.0, np.deg2rad(10.0), 0.0, 0.0, 0.0]
+
+# コントローラー
+controller = FurutaPendulum_PID_Controller()
 
 
 def feedback_law(t, x):
-    return 0.0
+
+    theta = x[0]
+    alpha = x[1]
+    dtheta = x[2]
+    dalpha = x[3]
+
+    voltage = controller.calculate_manipulation(
+        theta, alpha, dtheta, dalpha)
+
+    return voltage
 
 
 sampled_controller = SampledController(
