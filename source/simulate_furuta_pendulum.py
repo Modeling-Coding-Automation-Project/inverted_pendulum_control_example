@@ -34,7 +34,7 @@ model = FurutaPendulum(params, use_alt_backemf=True,
                        use_alt_arm_damping=True)
 print("Model built successfully.")
 
-# Initial condition: pendulum tilted 45 degrees from upright
+# Initial condition:
 # x = [theta, alpha, theta_dot, alpha_dot, i]
 x0 = [0.0, np.deg2rad(10.0), 0.0, 0.0, 0.0]
 
