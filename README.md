@@ -12,9 +12,28 @@ https://note.com/claude_a/n/nef52249cd84a
 
 ## 環境構築手順
 
-以下のページに記載しています。
+ベースの環境構築について、以下のリンク先ページに記載しています。
 
 [環境構築手順](https://github.com/Modeling-Coding-Automation-Project/MCAP_repo_manager/blob/main/documents/environment.md)
+
+上記リンク先を参考に、WSL Ubuntu 24.04 をインストールし、Dockerをインストールしてください。
+
+その後、本リポジトリを以下のコマンドでクローンします。
+
+``` bash
+git clone https://github.com/Modeling-Coding-Automation-Project/inverted_pendulum_control_example.git
+```
+
+その後、サブモジュールの更新も必要なので、以下のコマンドで行います。
+
+``` bash
+cd ./inverted_pendulum_control_example/
+git submodule update --progress --init
+```
+
+その後、inverted_pendulum_control_exampleディレクトリをVisual Studio Codeで開きます。
+
+Visual Studio Codeの「Reopen in Container」を実行し、Docker環境を起動します。
 
 ## サポート
 新規にissueを作成して、詳細をお知らせください。
