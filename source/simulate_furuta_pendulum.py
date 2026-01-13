@@ -21,8 +21,8 @@ from source.plant.furuta_pendulum_plant_model import (
 from source.controller.furuta_pendulum_pid_controller import FurutaPendulum_PID_Controller
 
 SIMULATION_TIME_STEP = 0.001  # シミュレーションの時間刻み幅（秒）
-SIMULATION_END_TIME = 5.0    # シミュレーションの終了時間（秒）
-PLAYBACK_FPS = 200  # 3Dプロット再生時のフレームレート（FPS）
+SIMULATION_END_TIME = 10.0    # シミュレーションの終了時間（秒）
+PLAYBACK_FPS = 1000  # 3Dプロット再生時のフレームレート（FPS）
 
 CONTROLLER_TIME_STEP = 0.005  # コントローラの時間刻み幅（秒）
 
@@ -48,6 +48,13 @@ def feedback_law(t, x):
     alpha = x[1]
     dtheta = x[2]
     dalpha = x[3]
+
+    theta_ref = 0.0
+
+    if t >= 5.0:
+        theta_ref = np.deg2rad(45.0)
+
+    controller.set_theta_reference_rad(theta_ref)
 
     voltage = controller.calculate_manipulation(
         theta, alpha, dtheta, dalpha)
