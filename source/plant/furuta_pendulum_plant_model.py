@@ -210,16 +210,19 @@ class FurutaPendulum:
         v_func_time_count = 0.0
         input_time_series = []
         input_value_series = []
+        v_saturated = 0.0
 
         def f(t, x):
             nonlocal v_func_time_count
             nonlocal input_time_series
             nonlocal input_value_series
-
-            v = v_func(t, x)
-            v_saturated = max(self.p["V_min"], min(self.p["V_max"], v))
+            nonlocal v_saturated
 
             if t >= v_func_time_count:
+
+                v = v_func(t, x)
+                v_saturated = max(self.p["V_min"], min(self.p["V_max"], v))
+
                 input_time_series.append(t)
                 input_value_series.append(v_saturated)
 

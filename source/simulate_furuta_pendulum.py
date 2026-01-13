@@ -26,6 +26,8 @@ PLAYBACK_FPS = 1000  # 3Dプロット再生時のフレームレート（FPS）
 
 CONTROLLER_TIME_STEP = 0.005  # コントローラの時間刻み幅（秒）
 
+SIL_MODE = False  # C++コードをSIL検証する場合はTrueに設定
+
 # =========================
 # 物理モデルの構築とシミュレーション実行
 # =========================
@@ -41,6 +43,21 @@ x0 = [0.0, np.deg2rad(10.0), 0.0, 0.0, 0.0]
 # コントローラー
 controller = FurutaPendulum_PID_Controller(Ts=CONTROLLER_TIME_STEP)
 
+if SIL_MODE:
+    from external_libraries.MCAP_Playground.helper.SIL.SIL_operator import SIL_Operator
+
+    current_dir = os.path.dirname(__file__)
+    generator = SIL_Operator("furuta_pendulum_pid_controller.py", current_dir)
+    generator.build_SIL_code()
+
+    import FurutaPendulumPidControllerSIL
+    FurutaPendulumPidControllerSIL.initialize(CONTROLLER_TIME_STEP)
+
+    voltage_cpp = 0.0
+
+# プロット
+plotter = SimulationPlotter()
+
 
 def feedback_law(t, x):
 
@@ -55,9 +72,16 @@ def feedback_law(t, x):
         theta_ref = np.deg2rad(45.0)
 
     controller.set_theta_reference_rad(theta_ref)
+    if SIL_MODE:
+        FurutaPendulumPidControllerSIL.set_theta_reference_rad(theta_ref)
 
     voltage = controller.calculate_manipulation(
         theta, alpha, dtheta, dalpha)
+    if SIL_MODE:
+        voltage_cpp = FurutaPendulumPidControllerSIL.calculate_manipulation(
+            theta, alpha, dtheta, dalpha)
+
+        plotter.append_name(voltage_cpp, "voltage_cpp")
 
     return voltage
 
@@ -231,7 +255,7 @@ timer.add_callback(update_timer)
 timer.start()
 
 # 波形表示
-plotter = SimulationPlotter()
+
 
 plotter.append_sequence_name(theta, "theta")
 plotter.append_sequence_name(alpha, "alpha")
@@ -243,6 +267,9 @@ plotter.assign("alpha", column=0, row=0, position=(1, 0),
                x_sequence=time_series, label="alpha")
 plotter.assign("voltage", column=0, row=0, position=(2, 0),
                x_sequence=voltage_time, label="voltage")
+if SIL_MODE:
+    plotter.assign("voltage_cpp", column=0, row=0, position=(2, 0),
+                   x_sequence=voltage_time, label="voltage_cpp")
 
 plotter.pre_plot(suptitle="Furuta Pendulum Simulation Results")
 
