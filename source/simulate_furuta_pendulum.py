@@ -18,9 +18,15 @@ from source.plant.furuta_pendulum_plant_model import (
     SampledController,
 )
 
+from source.controller.furuta_pendulum_pid_controller import FurutaPendulum_PID_Controller
+
 SIMULATION_TIME_STEP = 0.001  # シミュレーションの時間刻み幅（秒）
-SIMULATION_END_TIME = 5.0    # シミュレーションの終了時間（秒）
-PLAYBACK_FPS = 200  # 3Dプロット再生時のフレームレート（FPS）
+SIMULATION_END_TIME = 10.0    # シミュレーションの終了時間（秒）
+PLAYBACK_FPS = 1000  # 3Dプロット再生時のフレームレート（FPS）
+
+CONTROLLER_TIME_STEP = 0.005  # コントローラの時間刻み幅（秒）
+
+SIL_MODE = False  # C++コードをSIL検証する場合はTrueに設定
 
 # =========================
 # 物理モデルの構築とシミュレーション実行
@@ -30,16 +36,58 @@ model = FurutaPendulum(params, use_alt_backemf=True,
                        use_alt_arm_damping=True)
 print("Model built successfully.")
 
-# Initial condition: pendulum tilted 45 degrees from upright
+# Initial condition:
 # x = [theta, alpha, theta_dot, alpha_dot, i]
-x0 = [0.0, np.deg2rad(45.0), 0.0, 0.0, 0.0]
+x0 = [0.0, np.deg2rad(10.0), 0.0, 0.0, 0.0]
+
+# コントローラー
+controller = FurutaPendulum_PID_Controller(Ts=CONTROLLER_TIME_STEP)
+
+if SIL_MODE:
+    from external_libraries.MCAP_Playground.helper.SIL.SIL_operator import SIL_Operator
+
+    current_dir = os.path.dirname(__file__)
+    generator = SIL_Operator("furuta_pendulum_pid_controller.py", current_dir)
+    generator.build_SIL_code()
+
+    import FurutaPendulumPidControllerSIL
+    FurutaPendulumPidControllerSIL.initialize(CONTROLLER_TIME_STEP)
+
+    voltage_cpp = 0.0
+
+# プロット
+plotter = SimulationPlotter()
 
 
 def feedback_law(t, x):
-    return 0.0
+
+    theta = x[0]
+    alpha = x[1]
+    dtheta = x[2]
+    dalpha = x[3]
+
+    theta_ref = 0.0
+
+    if t >= 5.0:
+        theta_ref = np.deg2rad(45.0)
+
+    controller.set_theta_reference_rad(theta_ref)
+    if SIL_MODE:
+        FurutaPendulumPidControllerSIL.set_theta_reference_rad(theta_ref)
+
+    voltage = controller.calculate_manipulation(
+        theta, alpha, dtheta, dalpha)
+    if SIL_MODE:
+        voltage_cpp = FurutaPendulumPidControllerSIL.calculate_manipulation(
+            theta, alpha, dtheta, dalpha)
+
+        plotter.append_name(voltage_cpp, "voltage_cpp")
+
+    return voltage
 
 
-sampled_controller = SampledController(0.005, feedback_law, sat=(-12.0, 12.0))
+sampled_controller = SampledController(
+    CONTROLLER_TIME_STEP, feedback_law, sat=(-12.0, 12.0))
 
 print("Running simulation...")
 t_sim, X_sim = model.simulate(
@@ -207,7 +255,7 @@ timer.add_callback(update_timer)
 timer.start()
 
 # 波形表示
-plotter = SimulationPlotter()
+
 
 plotter.append_sequence_name(theta, "theta")
 plotter.append_sequence_name(alpha, "alpha")
@@ -219,6 +267,9 @@ plotter.assign("alpha", column=0, row=0, position=(1, 0),
                x_sequence=time_series, label="alpha")
 plotter.assign("voltage", column=0, row=0, position=(2, 0),
                x_sequence=voltage_time, label="voltage")
+if SIL_MODE:
+    plotter.assign("voltage_cpp", column=0, row=0, position=(2, 0),
+                   x_sequence=voltage_time, label="voltage_cpp")
 
 plotter.pre_plot(suptitle="Furuta Pendulum Simulation Results")
 
