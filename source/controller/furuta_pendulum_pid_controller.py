@@ -29,6 +29,8 @@ class FurutaPendulum_PID_Controller:
         theta_ref_rad: float = 0.0,
         alpha_ref_rad: float = 0.0,
         v_limit: float = 12.0,
+        alpha_ref_limit_rad: float | None = None,
+        theta_to_alpha_sign: float = 1.0,
     ) -> None:
         self.Ts = float(Ts)
 
@@ -39,34 +41,44 @@ class FurutaPendulum_PID_Controller:
         # Voltage saturation used for anti-windup
         self.v_limit = float(abs(v_limit))
 
+        # Limit for commanded pendulum tilt generated from theta control.
+        # Keeping this small is important: this controller intentionally uses
+        # a *small* pendulum lean to create restoring motion.
+        if alpha_ref_limit_rad is None:
+            alpha_ref_limit_rad = math.radians(12.0)
+        self.alpha_ref_limit_rad = float(abs(alpha_ref_limit_rad))
+
+        # Mapping sign: if theta is positive, we want alpha_ref_cmd to be positive.
+        # If your plant uses opposite sign conventions, set this to -1.0.
+        self.theta_to_alpha_sign = 1.0 if theta_to_alpha_sign >= 0.0 else -1.0
+
         # === Tuning gains (start conservative; tune as needed) ===
-        # Pendulum (stabilization) PID
-        self.kp_alpha = 35.0
+        # Theta PID output is interpreted as a commanded pendulum angle offset [rad].
+        # (theta > 0) -> (alpha_ref_cmd > 0) by construction.
+        self.kp_theta = 0.1
+        self.ki_theta = 0.0
+        self.kd_theta = 0.05
+
+        # Pendulum PID outputs motor voltage [V] to track alpha_ref_cmd.
+        self.kp_alpha = 100.0
         self.ki_alpha = 0.0
-        self.kd_alpha = 2.5
-
-        # Arm angle cascade: outer loop (theta -> dtheta_ref)
-        self.kp_theta_outer = 3.0
-        self.ki_theta_outer = 0.2
-
-        # Inner loop (dtheta -> voltage)
-        self.kp_dtheta_inner = 0.25
-        self.ki_dtheta_inner = 0.0
+        self.kd_alpha = 10.0
 
         # Integrator states
-        self._int_alpha = 0.0
         self._int_theta = 0.0
-        self._int_dtheta = 0.0
+        self._int_alpha = 0.0
 
-        # Simple derivative filtering for alpha (on measurement)
+        # Simple derivative filtering (on measurement)
         self._dalpha_filt = 0.0
         self._dalpha_tau = 0.02  # [s]
+        self._dtheta_filt = 0.0
+        self._dtheta_tau = 0.02  # [s]
 
     def reset(self) -> None:
-        self._int_alpha = 0.0
         self._int_theta = 0.0
-        self._int_dtheta = 0.0
+        self._int_alpha = 0.0
         self._dalpha_filt = 0.0
+        self._dtheta_filt = 0.0
 
     def set_theta_reference_rad(self, theta_ref_rad: float) -> None:
         self.theta_ref_rad = float(theta_ref_rad)
@@ -89,71 +101,94 @@ class FurutaPendulum_PID_Controller:
     ) -> float:
         """Compute voltage command.
 
-        This uses:
-          - Arm: cascade PI (theta) -> dtheta_ref, then PI (dtheta)
-          - Pendulum: PID (typically PD is enough; ki_alpha defaults to 0)
+                Policy:
+                    1) Compute theta PID "manipulated value" (here: desired alpha offset).
+                    2) Use that value as the pendulum angle command alpha_ref_cmd.
+                    3) Pendulum PID tracks alpha_ref_cmd and outputs motor voltage.
+
+                Intuition:
+                    - When theta is positive, alpha_ref_cmd becomes positive (small tilt).
+                    - Maintaining that tilt produces a restoring motion on theta through
+                        the Furuta coupling, driving both angles back toward 0.
         """
 
         Ts = self.Ts
         if Ts <= 0.0:
             Ts = 1e-3
 
-        # --- Errors ---
-        e_theta = _wrap_to_pi(self.theta_ref_rad - float(theta))
-        e_alpha = _wrap_to_pi(self.alpha_ref_rad - float(alpha))
+        # --- Theta error (defined so theta>ref -> positive error) ---
+        theta_meas = float(theta)
+        alpha_meas = float(alpha)
+        dtheta_meas = float(dtheta)
+        dalpha_meas = float(dalpha)
 
-        # --- Filtered derivative for pendulum (use measurement derivative) ---
+        e_theta = _wrap_to_pi(theta_meas - self.theta_ref_rad)
+
+        # --- Filtered derivatives (measurement) ---
         # Low-pass filter: y_dot_filt = (tau/(tau+Ts))*y_dot_filt + (Ts/(tau+Ts))*y_dot
-        tau = self._dalpha_tau
-        if tau > 0.0:
-            a = tau / (tau + Ts)
-            b = Ts / (tau + Ts)
-            self._dalpha_filt = a * self._dalpha_filt + b * float(dalpha)
+        tau_th = self._dtheta_tau
+        if tau_th > 0.0:
+            a = tau_th / (tau_th + Ts)
+            b = Ts / (tau_th + Ts)
+            self._dtheta_filt = a * self._dtheta_filt + b * dtheta_meas
+            dtheta_used = self._dtheta_filt
+        else:
+            dtheta_used = dtheta_meas
+
+        tau_al = self._dalpha_tau
+        if tau_al > 0.0:
+            a = tau_al / (tau_al + Ts)
+            b = Ts / (tau_al + Ts)
+            self._dalpha_filt = a * self._dalpha_filt + b * dalpha_meas
             dalpha_used = self._dalpha_filt
         else:
-            dalpha_used = float(dalpha)
+            dalpha_used = dalpha_meas
 
-        # --- Outer loop: theta -> desired dtheta ---
-        # PI (no derivative) to avoid double-derivative when inner loop uses velocity.
-        dtheta_ref = self.kp_theta_outer * e_theta + \
-            self.ki_theta_outer * self._int_theta
+        # --- Theta PID -> commanded pendulum angle (alpha_ref_cmd) ---
+        # Derivative term uses +dtheta (measurement) so theta increasing positive
+        # will also push alpha_ref_cmd positive (consistent with the policy).
+        alpha_offset_cmd = self.theta_to_alpha_sign * (
+            self.kp_theta * e_theta
+            + self.ki_theta * self._int_theta
+            + self.kd_theta * dtheta_used
+        )
 
-        # --- Inner loop: dtheta -> voltage contribution ---
-        e_dtheta = float(dtheta_ref) - float(dtheta)
-        v_theta = self.kp_dtheta_inner * e_dtheta + \
-            self.ki_dtheta_inner * self._int_dtheta
+        alpha_ref_cmd = _wrap_to_pi(self.alpha_ref_rad + alpha_offset_cmd)
+        alpha_ref_cmd_sat = max(
+            -self.alpha_ref_limit_rad,
+            min(self.alpha_ref_limit_rad, alpha_ref_cmd),
+        )
+
+        # Pendulum error relative to *commanded* reference
+        e_alpha = _wrap_to_pi(alpha_ref_cmd_sat - alpha_meas)
 
         # --- Pendulum stabilization voltage contribution ---
         # Derivative term uses -dalpha (derivative of error when alpha_ref is constant)
-        v_alpha = (
-            self.kp_alpha * e_alpha
-            + self.ki_alpha * self._int_alpha
-            - self.kd_alpha * dalpha_used
+        v_unsat = float(
+            (self.kp_alpha * e_alpha)
+            + (self.ki_alpha * self._int_alpha)
+            - (self.kd_alpha * dalpha_used)
         )
-
-        v_unsat = float(v_theta + v_alpha)
 
         # --- Saturation ---
         v_sat = max(-self.v_limit, min(self.v_limit, v_unsat))
 
         # --- Anti-windup (conditional integration) ---
-        # If saturated and the integrator would push further into saturation, freeze that integrator.
-        def _should_integrate(v_cmd: float, v_cmd_sat: float, err: float) -> bool:
-            if v_cmd == v_cmd_sat:
+        def _should_integrate_u(u_cmd: float, u_cmd_sat: float, err: float, u_lim: float) -> bool:
+            if u_cmd == u_cmd_sat:
                 return True
-            # saturated high and error wants more positive -> don't integrate
-            if v_cmd_sat >= self.v_limit - 1e-12 and err > 0.0:
+            if u_cmd_sat >= u_lim - 1e-12 and err > 0.0:
                 return False
-            # saturated low and error wants more negative -> don't integrate
-            if v_cmd_sat <= -self.v_limit + 1e-12 and err < 0.0:
+            if u_cmd_sat <= -u_lim + 1e-12 and err < 0.0:
                 return False
             return True
 
-        if _should_integrate(v_unsat, v_sat, e_alpha):
-            self._int_alpha += e_alpha * Ts
-        if _should_integrate(v_unsat, v_sat, e_theta):
+        # Theta integrator is limited by the alpha_ref_cmd saturation.
+        if _should_integrate_u(alpha_ref_cmd, alpha_ref_cmd_sat, e_theta, self.alpha_ref_limit_rad):
             self._int_theta += e_theta * Ts
-        if _should_integrate(v_unsat, v_sat, e_dtheta):
-            self._int_dtheta += e_dtheta * Ts
+
+        # Alpha integrator is limited by the voltage saturation.
+        if _should_integrate_u(v_unsat, v_sat, e_alpha, self.v_limit):
+            self._int_alpha += e_alpha * Ts
 
         return v_sat
