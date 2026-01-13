@@ -39,7 +39,7 @@ print("Model built successfully.")
 x0 = [0.0, np.deg2rad(10.0), 0.0, 0.0, 0.0]
 
 # コントローラー
-controller = FurutaPendulum_PID_Controller()
+controller = FurutaPendulum_PID_Controller(Ts=CONTROLLER_TIME_STEP)
 
 
 def feedback_law(t, x):
