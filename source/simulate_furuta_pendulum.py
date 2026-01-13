@@ -22,6 +22,8 @@ SIMULATION_TIME_STEP = 0.001  # シミュレーションの時間刻み幅（秒
 SIMULATION_END_TIME = 5.0    # シミュレーションの終了時間（秒）
 PLAYBACK_FPS = 200  # 3Dプロット再生時のフレームレート（FPS）
 
+CONTROLLER_TIME_STEP = 0.005  # コントローラの時間刻み幅（秒）
+
 # =========================
 # 物理モデルの構築とシミュレーション実行
 # =========================
@@ -39,7 +41,8 @@ def feedback_law(t, x):
     return 0.0
 
 
-sampled_controller = SampledController(0.005, feedback_law, sat=(-12.0, 12.0))
+sampled_controller = SampledController(
+    CONTROLLER_TIME_STEP, feedback_law, sat=(-12.0, 12.0))
 
 print("Running simulation...")
 t_sim, X_sim = model.simulate(
