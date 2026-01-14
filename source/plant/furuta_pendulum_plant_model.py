@@ -27,6 +27,10 @@ class FurutaPendulum:
         self.input_time_series = None
         self.input_value_series = None
 
+        self.f_thdd = None
+        self.f_aldd = None
+        self.f_di = None
+
         # Build lambdified dynamics
         self._build_symbolic_model()
 
@@ -153,9 +157,9 @@ class FurutaPendulum:
             D_r, D_p, mu_m, R_m, L_m, K_t, K_b
         ]
 
-        self._f_thdd = sp.lambdify(sym_list, thdd_sol, "numpy")
-        self._f_aldd = sp.lambdify(sym_list, aldd_sol, "numpy")
-        self._f_di = sp.lambdify(sym_list, di_sol, "numpy")
+        self.f_thdd = sp.lambdify(sym_list, thdd_sol, "numpy")
+        self.f_aldd = sp.lambdify(sym_list, aldd_sol, "numpy")
+        self.f_di = sp.lambdify(sym_list, di_sol, "numpy")
 
         # Cache numeric parameter tuple order
         self._param_tuple = (
@@ -180,17 +184,17 @@ class FurutaPendulum:
          D_r, D_p, mu_m, R_m,
          L_m, K_t, K_b) = self._param_tuple
 
-        thdd = self._f_thdd(theta, alpha, thd, ald, i, v,
-                            m_p, L_r, L_p, g, J_r, J_m, n, rod_rad, p_rad,
-                            D_r, D_p, mu_m, R_m, L_m, K_t, K_b)
+        thdd = self.f_thdd(theta, alpha, thd, ald, i, v,
+                           m_p, L_r, L_p, g, J_r, J_m, n, rod_rad, p_rad,
+                           D_r, D_p, mu_m, R_m, L_m, K_t, K_b)
 
-        aldd = self._f_aldd(theta, alpha, thd, ald, i, v,
-                            m_p, L_r, L_p, g, J_r, J_m, n, rod_rad, p_rad,
-                            D_r, D_p, mu_m, R_m, L_m, K_t, K_b)
+        aldd = self.f_aldd(theta, alpha, thd, ald, i, v,
+                           m_p, L_r, L_p, g, J_r, J_m, n, rod_rad, p_rad,
+                           D_r, D_p, mu_m, R_m, L_m, K_t, K_b)
 
-        di = self._f_di(theta, alpha, thd, ald, i, v,
-                        m_p, L_r, L_p, g, J_r, J_m, n, rod_rad, p_rad,
-                        D_r, D_p, mu_m, R_m, L_m, K_t, K_b)
+        di = self.f_di(theta, alpha, thd, ald, i, v,
+                       m_p, L_r, L_p, g, J_r, J_m, n, rod_rad, p_rad,
+                       D_r, D_p, mu_m, R_m, L_m, K_t, K_b)
 
         return np.array([thd, ald, float(thdd), float(aldd), float(di)], dtype=float)
 
