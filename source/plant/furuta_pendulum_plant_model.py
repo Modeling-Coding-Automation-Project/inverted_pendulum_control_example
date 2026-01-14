@@ -24,7 +24,11 @@ class FurutaPendulum:
     Input u = v (motor voltage)
     """
 
-    def __init__(self, params: dict):
+    def __init__(
+        self,
+        params: dict,
+        fast_restart: bool = False
+    ):
         self.p = dict(params)
 
         self.input_time_series = None
@@ -35,6 +39,14 @@ class FurutaPendulum:
         self.f_di = None
 
         self._param_tuple = None
+
+        self._build_or_load_model(fast_restart)
+
+    def _build_or_load_model(self, fast_restart: bool):
+
+        if not fast_restart:
+            self._build_symbolic_model()
+            return
 
         if not NPZ_FILE_PATH.exists():
             self._build_symbolic_model()

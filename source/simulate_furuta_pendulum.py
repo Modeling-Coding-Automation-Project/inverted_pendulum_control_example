@@ -26,11 +26,12 @@ PLAYBACK_FPS = 1000  # 3Dプロット再生時のフレームレート（FPS）
 
 CONTROLLER_TIME_STEP = 0.005  # コントローラの時間刻み幅（秒）
 
+FAST_RESTART = False  # 物理モデルの再構築をせず、前回の結果を使用する場合はTrueに設定
 SIL_MODE = False  # C++コードをSIL検証する場合はTrueに設定
 
 # 物理モデル
 print("Building symbolic physics model...")
-model = FurutaPendulum(params)
+model = FurutaPendulum(params, fast_restart=FAST_RESTART)
 print("Model built successfully.")
 
 # 初期値
