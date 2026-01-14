@@ -28,15 +28,13 @@ CONTROLLER_TIME_STEP = 0.005  # コントローラの時間刻み幅（秒）
 
 SIL_MODE = False  # C++コードをSIL検証する場合はTrueに設定
 
-# =========================
-# 物理モデルの構築とシミュレーション実行
-# =========================
+# 物理モデル
 print("Building symbolic physics model...")
 model = FurutaPendulum(params, use_alt_backemf=True,
                        use_alt_arm_damping=True)
 print("Model built successfully.")
 
-# Initial condition:
+# 初期値
 # x = [theta, alpha, theta_dot, alpha_dot, i]
 x0 = [0.0, np.deg2rad(10.0), 0.0, 0.0, 0.0]
 
