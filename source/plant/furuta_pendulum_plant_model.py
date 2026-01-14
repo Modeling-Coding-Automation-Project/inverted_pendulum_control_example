@@ -5,10 +5,14 @@ import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
+sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 import numpy as np
 import sympy as sp
 from scipy.integrate import solve_ivp
+import dill
+
+NPZ_FILE_PATH = Path(__file__).parent / "furuta_pendulum_plant_model.npz"
 
 
 class FurutaPendulum:
@@ -20,14 +24,45 @@ class FurutaPendulum:
     Input u = v (motor voltage)
     """
 
-    def __init__(self, params: dict, use_alt_backemf=False, use_alt_arm_damping=False):
+    def __init__(
+        self,
+        params: dict,
+        fast_restart: bool = False
+    ):
         self.p = dict(params)
 
         self.input_time_series = None
         self.input_value_series = None
 
-        # Build lambdified dynamics
-        self._build_symbolic_model()
+        self.f_thdd = None
+        self.f_aldd = None
+        self.f_di = None
+
+        self._param_tuple = None
+
+        self._build_or_load_model(fast_restart)
+
+    def _build_or_load_model(self, fast_restart: bool):
+
+        if not fast_restart:
+            self._build_symbolic_model()
+            return
+
+        if not NPZ_FILE_PATH.exists():
+            self._build_symbolic_model()
+
+            pickled = dill.dumps(self)
+            np.savez_compressed(NPZ_FILE_PATH,
+                                pickled_instance=np.array([pickled], dtype=object))
+
+        else:
+            data = np.load(NPZ_FILE_PATH, allow_pickle=True)
+            loaded_instance: FurutaPendulum = dill.loads(
+                data["pickled_instance"][0])
+            self.f_thdd = loaded_instance.f_thdd
+            self.f_aldd = loaded_instance.f_aldd
+            self.f_di = loaded_instance.f_di
+            self._param_tuple = loaded_instance._param_tuple
 
     def _build_symbolic_model(self):
         p = self.p
@@ -152,9 +187,9 @@ class FurutaPendulum:
             D_r, D_p, mu_m, R_m, L_m, K_t, K_b
         ]
 
-        self._f_thdd = sp.lambdify(sym_list, thdd_sol, "numpy")
-        self._f_aldd = sp.lambdify(sym_list, aldd_sol, "numpy")
-        self._f_di = sp.lambdify(sym_list, di_sol, "numpy")
+        self.f_thdd = sp.lambdify(sym_list, thdd_sol, "numpy")
+        self.f_aldd = sp.lambdify(sym_list, aldd_sol, "numpy")
+        self.f_di = sp.lambdify(sym_list, di_sol, "numpy")
 
         # Cache numeric parameter tuple order
         self._param_tuple = (
@@ -179,17 +214,17 @@ class FurutaPendulum:
          D_r, D_p, mu_m, R_m,
          L_m, K_t, K_b) = self._param_tuple
 
-        thdd = self._f_thdd(theta, alpha, thd, ald, i, v,
-                            m_p, L_r, L_p, g, J_r, J_m, n, rod_rad, p_rad,
-                            D_r, D_p, mu_m, R_m, L_m, K_t, K_b)
+        thdd = self.f_thdd(theta, alpha, thd, ald, i, v,
+                           m_p, L_r, L_p, g, J_r, J_m, n, rod_rad, p_rad,
+                           D_r, D_p, mu_m, R_m, L_m, K_t, K_b)
 
-        aldd = self._f_aldd(theta, alpha, thd, ald, i, v,
-                            m_p, L_r, L_p, g, J_r, J_m, n, rod_rad, p_rad,
-                            D_r, D_p, mu_m, R_m, L_m, K_t, K_b)
+        aldd = self.f_aldd(theta, alpha, thd, ald, i, v,
+                           m_p, L_r, L_p, g, J_r, J_m, n, rod_rad, p_rad,
+                           D_r, D_p, mu_m, R_m, L_m, K_t, K_b)
 
-        di = self._f_di(theta, alpha, thd, ald, i, v,
-                        m_p, L_r, L_p, g, J_r, J_m, n, rod_rad, p_rad,
-                        D_r, D_p, mu_m, R_m, L_m, K_t, K_b)
+        di = self.f_di(theta, alpha, thd, ald, i, v,
+                       m_p, L_r, L_p, g, J_r, J_m, n, rod_rad, p_rad,
+                       D_r, D_p, mu_m, R_m, L_m, K_t, K_b)
 
         return np.array([thd, ald, float(thdd), float(aldd), float(di)], dtype=float)
 
