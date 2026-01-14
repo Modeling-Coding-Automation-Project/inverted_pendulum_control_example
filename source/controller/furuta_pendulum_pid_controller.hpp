@@ -24,6 +24,8 @@ public:
   static constexpr FLOAT DTHETA_TAU_DEFAULT = 0.02;
   static constexpr FLOAT DALPHA_TAU_DEFAULT = 0.02;
 
+  static constexpr FLOAT EPS_VALUE = 1e-12;
+
 public:
   FurutaPendulum_PID_Controller(
       FLOAT Ts = TS_DEFAULT, FLOAT theta_ref_rad = 0.0,

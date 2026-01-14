@@ -71,7 +71,7 @@ bool FurutaPendulum_PID_Controller::should_integrate_u(
   if (u_cmd == u_cmd_sat) {
     return true;
   }
-  const FLOAT eps = static_cast<FLOAT>(1e-12);
+  const FLOAT eps = FurutaPendulum_PID_Controller::EPS_VALUE;
   if (u_cmd_sat >= u_lim - eps && err > 0.0) {
     return false;
   }
