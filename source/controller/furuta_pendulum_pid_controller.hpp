@@ -1,19 +1,35 @@
 #ifndef __FURUTA_PENDULUM_PID_CONTROLLER_HPP__
 #define __FURUTA_PENDULUM_PID_CONTROLLER_HPP__
 
+#include <algorithm>
 #include <cmath>
 
 class FurutaPendulum_PID_Controller {
 public:
   using FLOAT = double;
 
-public:
-  FurutaPendulum_PID_Controller(FLOAT Ts = 0.005, FLOAT theta_ref_rad = 0.0,
-                                FLOAT alpha_ref_rad = 0.0, FLOAT v_limit = 12.0,
-                                FLOAT alpha_ref_limit_rad = (12.0 * M_PI /
-                                                             180.0),
-                                FLOAT theta_to_alpha_sign = 1.0);
+  static constexpr FLOAT TS_DEFAULT = 0.005;
+  static constexpr FLOAT TS_MIN = 1e-6;
 
+  static constexpr FLOAT V_LIMIT_DEFAULT = 12.0;
+  static constexpr FLOAT PI_VALUE = static_cast<FLOAT>(3.141592653589793);
+  static constexpr FLOAT ALPHA_REF_LIMIT_RAD_DEFAULT = 12.0 * PI_VALUE / 180.0;
+  static constexpr FLOAT THETA_TO_ALPHA_SIGN_DEFAULT = 1.0;
+  static constexpr FLOAT KP_THETA_DEFAULT = 0.1;
+  static constexpr FLOAT KI_THETA_DEFAULT = 0.0;
+  static constexpr FLOAT KD_THETA_DEFAULT = 0.05;
+  static constexpr FLOAT KP_ALPHA_DEFAULT = 100.0;
+  static constexpr FLOAT KI_ALPHA_DEFAULT = 0.0;
+  static constexpr FLOAT KD_ALPHA_DEFAULT = 10.0;
+  static constexpr FLOAT DTHETA_TAU_DEFAULT = 0.02;
+  static constexpr FLOAT DALPHA_TAU_DEFAULT = 0.02;
+
+public:
+  FurutaPendulum_PID_Controller(
+      FLOAT Ts = TS_DEFAULT, FLOAT theta_ref_rad = 0.0,
+      FLOAT alpha_ref_rad = 0.0, FLOAT v_limit = V_LIMIT_DEFAULT,
+      FLOAT alpha_ref_limit_rad = ALPHA_REF_LIMIT_RAD_DEFAULT,
+      FLOAT theta_to_alpha_sign = THETA_TO_ALPHA_SIGN_DEFAULT);
   ~FurutaPendulum_PID_Controller();
 
   void reset();
