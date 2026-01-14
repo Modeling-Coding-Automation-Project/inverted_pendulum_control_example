@@ -30,8 +30,7 @@ SIL_MODE = False  # C++コードをSIL検証する場合はTrueに設定
 
 # 物理モデル
 print("Building symbolic physics model...")
-model = FurutaPendulum(params, use_alt_backemf=True,
-                       use_alt_arm_damping=True)
+model = FurutaPendulum(params)
 print("Model built successfully.")
 
 # 初期値

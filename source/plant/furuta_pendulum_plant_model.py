@@ -10,6 +10,9 @@ sys.path.append(str(Path(__file__).resolve().parents[2]))
 import numpy as np
 import sympy as sp
 from scipy.integrate import solve_ivp
+import dill
+
+NPZ_FILE_PATH = Path(__file__).parent / "furuta_pendulum_plant_model.npz"
 
 
 class FurutaPendulum:
@@ -21,7 +24,7 @@ class FurutaPendulum:
     Input u = v (motor voltage)
     """
 
-    def __init__(self, params: dict, use_alt_backemf=False, use_alt_arm_damping=False):
+    def __init__(self, params: dict):
         self.p = dict(params)
 
         self.input_time_series = None
@@ -31,8 +34,23 @@ class FurutaPendulum:
         self.f_aldd = None
         self.f_di = None
 
-        # Build lambdified dynamics
-        self._build_symbolic_model()
+        self._param_tuple = None
+
+        if not NPZ_FILE_PATH.exists():
+            self._build_symbolic_model()
+
+            pickled = dill.dumps(self)
+            np.savez_compressed(NPZ_FILE_PATH,
+                                pickled_instance=np.array([pickled], dtype=object))
+
+        else:
+            data = np.load(NPZ_FILE_PATH, allow_pickle=True)
+            loaded_instance: FurutaPendulum = dill.loads(
+                data["pickled_instance"][0])
+            self.f_thdd = loaded_instance.f_thdd
+            self.f_aldd = loaded_instance.f_aldd
+            self.f_di = loaded_instance.f_di
+            self._param_tuple = loaded_instance._param_tuple
 
     def _build_symbolic_model(self):
         p = self.p
