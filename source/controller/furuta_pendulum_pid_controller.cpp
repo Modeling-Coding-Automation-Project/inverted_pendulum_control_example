@@ -1,5 +1,36 @@
 #include "furuta_pendulum_pid_controller.hpp"
 
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::TS_DEFAULT;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::TS_MIN;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::V_LIMIT_DEFAULT;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::PI_VALUE;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::ALPHA_REF_LIMIT_RAD_DEFAULT;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::THETA_TO_ALPHA_SIGN_DEFAULT;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::KP_THETA_DEFAULT;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::KI_THETA_DEFAULT;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::KD_THETA_DEFAULT;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::KP_ALPHA_DEFAULT;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::KI_ALPHA_DEFAULT;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::KD_ALPHA_DEFAULT;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::DTHETA_TAU_DEFAULT;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::DALPHA_TAU_DEFAULT;
+constexpr FurutaPendulum_PID_Controller::FLOAT
+    FurutaPendulum_PID_Controller::EPS_VALUE;
+
 FurutaPendulum_PID_Controller::FurutaPendulum_PID_Controller(
     FurutaPendulum_PID_Controller::FLOAT Ts,
     FurutaPendulum_PID_Controller::FLOAT theta_ref_rad,
