@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
+import pytest
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider
 
@@ -28,6 +29,7 @@ CONTROLLER_TIME_STEP = 0.005  # コントローラの時間刻み幅（秒）
 
 FAST_RESTART = False  # 物理モデルの再構築をせず、前回の結果を使用する場合はTrueに設定
 SIL_MODE = False  # C++コードをSIL検証する場合はTrueに設定
+SIL_TOLERANCE = 1e-5  # SIL検証の許容誤差
 
 # 物理モデル
 print("Building symbolic physics model...")
@@ -78,6 +80,9 @@ def feedback_law(t, x):
     if SIL_MODE:
         voltage_cpp = FurutaPendulumPidControllerSIL.calculate_manipulation(
             theta, alpha, dtheta, dalpha)
+
+        assert voltage == pytest.approx(
+            voltage_cpp, abs=SIL_TOLERANCE), "Voltage mismatch"
 
         plotter.append_name(voltage_cpp, "voltage_cpp")
 
