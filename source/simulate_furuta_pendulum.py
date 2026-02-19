@@ -11,7 +11,7 @@ import pytest
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider
 
-from external_libraries.simulation_manager.visualize.simulation_plotter import SimulationPlotter
+from external_libraries.simulation_manager.visualize.simulation_plotter_dash import SimulationPlotterDash
 
 from source.plant.furuta_pendulum_plant_model import (
     FurutaPendulum,
@@ -56,7 +56,7 @@ if SIL_MODE:
     voltage_cpp = 0.0
 
 # プロット
-plotter = SimulationPlotter()
+plotter = SimulationPlotterDash()
 
 
 def feedback_law(t, x):
@@ -274,6 +274,6 @@ if SIL_MODE:
     plotter.assign("voltage_cpp", column=0, row=0, position=(2, 0),
                    x_sequence=voltage_time, label="voltage_cpp")
 
-plotter.pre_plot(suptitle="Furuta Pendulum Simulation Results")
+plotter.plot(suptitle="Furuta Pendulum Simulation Results")
 
 plt.show()
