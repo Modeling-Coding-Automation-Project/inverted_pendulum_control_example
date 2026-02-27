@@ -48,7 +48,7 @@ if SIL_MODE:
 
     current_dir = os.path.dirname(__file__)
     generator = SIL_Operator("furuta_pendulum_pid_controller.py", current_dir)
-    generator.build_SIL_code()
+    generator.build_SIL_code(build_type="Debug")
 
     import FurutaPendulumPidControllerSIL
     FurutaPendulumPidControllerSIL.initialize(CONTROLLER_TIME_STEP)
