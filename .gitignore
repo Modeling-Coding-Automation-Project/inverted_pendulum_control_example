@@ -492,3 +492,4 @@ cache/
 
 # build files
 *.so
+CMakeLists.txt
