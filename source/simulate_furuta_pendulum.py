@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
@@ -274,6 +275,11 @@ if SIL_MODE:
     plotter.assign("voltage_cpp", column=0, row=0, position=(2, 0),
                    x_sequence=voltage_time, label="voltage_cpp")
 
-plotter.plot(suptitle="Furuta Pendulum Simulation Results")
+dash_thread = threading.Thread(
+    target=plotter.plot,
+    kwargs={"suptitle": "Furuta Pendulum Simulation Results"},
+    daemon=True,
+)
+dash_thread.start()
 
 plt.show()
