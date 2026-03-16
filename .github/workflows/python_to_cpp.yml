@@ -14,7 +14,8 @@ permissions:
 jobs:
   call-shared:
     uses: Modeling-Coding-Automation-Project/MCAP_actions/.github/workflows/python_to_cpp.yml@main
-    # with:
+    with:
+      submodules: 'false'     # Set to 'true' if your repository uses git submodules
       # ai_model: "claude-sonnet-4.5"
     secrets:
       COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
