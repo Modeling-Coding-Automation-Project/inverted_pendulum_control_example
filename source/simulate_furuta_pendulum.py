@@ -265,14 +265,14 @@ plotter.append_sequence_name(theta, "theta")
 plotter.append_sequence_name(alpha, "alpha")
 plotter.append_sequence_name(voltage, "voltage")
 
-plotter.assign("theta", column=0, row=0, position=(0, 0),
+plotter.assign("theta", row=0, column=0, position=(0, 0),
                x_sequence=time_series, label="theta")
-plotter.assign("alpha", column=0, row=0, position=(1, 0),
+plotter.assign("alpha", row=0, column=0, position=(1, 0),
                x_sequence=time_series, label="alpha")
-plotter.assign("voltage", column=0, row=0, position=(2, 0),
+plotter.assign("voltage", row=0, column=0, position=(2, 0),
                x_sequence=voltage_time, label="voltage")
 if SIL_MODE:
-    plotter.assign("voltage_cpp", column=0, row=0, position=(2, 0),
+    plotter.assign("voltage_cpp", row=0, column=0, position=(2, 0),
                    x_sequence=voltage_time, label="voltage_cpp")
 
 dash_thread = threading.Thread(
