@@ -1,5 +1,5 @@
-#ifndef __FURUTA_PENDULUM_PID_CONTROLLER_HPP__
-#define __FURUTA_PENDULUM_PID_CONTROLLER_HPP__
+#ifndef FURUTA_PENDULUM_PID_CONTROLLER_HPP_
+#define FURUTA_PENDULUM_PID_CONTROLLER_HPP_
 
 #include <algorithm>
 #include <cmath>
@@ -91,4 +91,4 @@ private:
   FLOAT _dtheta_tau;
 };
 
-#endif // __FURUTA_PENDULUM_PID_CONTROLLER_HPP__
+#endif // FURUTA_PENDULUM_PID_CONTROLLER_HPP_
