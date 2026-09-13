@@ -9,10 +9,9 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 import pytest
-import matplotlib.pyplot as plt
-from matplotlib.widgets import Button, Slider
 
 from external_libraries.simulation_manager.visualize.simulation_plotter_dash import SimulationPlotterDash
+from source.plot_pendulum_move import plot_matplotlib, plot_plotly
 
 from source.plant.furuta_pendulum_plant_model import (
     FurutaPendulum,
@@ -109,9 +108,6 @@ alpha = X_sim[:, 1]  # pendulum angle
 voltage = model.input_value_series
 voltage_time = model.input_time_series
 
-N = len(time_series)
-dt = time_series[1] - \
-    time_series[0] if len(time_series) > 1 else SIMULATION_TIME_STEP
 # Quick check prints
 print("Final state:", X_sim[-1])
 print("Max |alpha| [deg]:", np.rad2deg(np.max(np.abs(alpha))))
@@ -119,144 +115,6 @@ print("Max |alpha| [deg]:", np.rad2deg(np.max(np.abs(alpha))))
 # 可視化用のアーム・振子長さ（物理パラメータから取得）
 L_arm = params["L_r"]
 L_pend = params["L_p"]
-
-# =========================
-# Figure & Axes
-# =========================
-fig = plt.figure(figsize=(6, 6))
-ax = fig.add_subplot(111, projection="3d")
-
-plt.subplots_adjust(bottom=0.32)
-
-# 軸の範囲を物理パラメータに基づいて設定
-axis_limit = (L_arm + L_pend) / 2.0 * 1.5
-ax.set_xlim([-axis_limit, axis_limit])
-ax.set_ylim([-axis_limit, axis_limit])
-ax.set_zlim([-axis_limit, axis_limit])
-ax.set_xlabel("X")
-ax.set_ylabel("Y")
-ax.set_zlabel("Z")
-ax.view_init(elev=25, azim=45)
-
-arm_line, = ax.plot([], [], [], "r-", lw=3)
-pend_line, = ax.plot([], [], [], "b-", lw=3)
-
-# =========================
-# 時刻表示（画面固定）
-# =========================
-time_text = ax.text2D(
-    0.02, 0.95,
-    "",
-    transform=ax.transAxes,
-    fontsize=12,
-    bbox=dict(facecolor="white", alpha=0.7)
-)
-
-# =========================
-# 状態管理
-# =========================
-idx = 0
-running = False
-
-
-# =========================
-# 描画更新
-# =========================
-def draw(i):
-    th = theta[i]
-    al = alpha[i]
-
-    x_arm = L_arm * np.cos(th)
-    y_arm = L_arm * np.sin(th)
-    z_arm = 0.0
-
-    # Pendulum tip computed using the same kinematic convention used
-    # in the symbolic model: u_hat = cos(alpha)*e_z - sin(alpha)*e_th
-    # which expands to components:
-    # [ sin(alpha)*sin(th), -sin(alpha)*cos(th), cos(alpha) ]
-    x_p = x_arm + L_pend * (np.sin(al) * np.sin(th))
-    y_p = y_arm - L_pend * (np.sin(al) * np.cos(th))
-    z_p = L_pend * np.cos(al)
-
-    arm_line.set_data([0, x_arm], [0, y_arm])
-    arm_line.set_3d_properties([0, z_arm])
-
-    pend_line.set_data([x_arm, x_p], [y_arm, y_p])
-    pend_line.set_3d_properties([z_arm, z_p])
-
-    time_text.set_text(f"t = {time_series[i]:.2f} [s]")
-
-    fig.canvas.draw_idle()
-
-# =========================
-# タイマー処理（再生はPLAYBACK_FPSで行う）
-# =========================
-
-
-def update_timer():
-    global idx
-    if running:
-        idx = min(idx + playback_step, N - 1)
-        slider_time.set_val(idx)
-
-# タイマーは後で作成（slider_timeが定義された後）
-
-
-# =========================
-# 再生 / 停止
-# =========================
-# Buttons moved below the slider (centered under slider area)
-ax_play = plt.axes([0.35, 0.14, 0.12, 0.06])
-ax_stop = plt.axes([0.53, 0.14, 0.12, 0.06])
-
-btn_play = Button(ax_play, "Play")
-btn_stop = Button(ax_stop, "Stop")
-
-
-def play(event):
-    global running
-    running = True
-
-
-def stop(event):
-    global running
-    running = False
-
-
-btn_play.on_clicked(play)
-btn_stop.on_clicked(stop)
-
-# =========================
-# 時間シークバー
-# =========================
-# Slider placed above the buttons and stretched wider
-ax_slider_time = plt.axes([0.20, 0.20, 0.60, 0.03])
-slider_time = Slider(
-    ax_slider_time,
-    "Step",
-    0,
-    N - 1,
-    valinit=0,
-    valstep=1
-)
-
-
-def on_time_slider(val):
-    global idx
-    idx = int(val)
-    draw(idx)
-
-
-slider_time.on_changed(on_time_slider)
-
-# 3D描画
-draw(0)
-dt_sample = dt if N > 1 else SIMULATION_TIME_STEP
-playback_step = max(1, int(round((1.0 / PLAYBACK_FPS) / dt_sample)))
-
-timer = fig.canvas.new_timer(interval=int(1000.0 / PLAYBACK_FPS))
-timer.add_callback(update_timer)
-timer.start()
 
 # 波形表示
 
@@ -275,11 +133,7 @@ if SIL_MODE:
     plotter.assign("voltage_cpp", row=0, column=0, position=(2, 0),
                    x_sequence=voltage_time, label="voltage_cpp")
 
-dash_thread = threading.Thread(
-    target=plotter.plot,
-    kwargs={"suptitle": "Furuta Pendulum Simulation Results"},
-    daemon=True,
-)
-dash_thread.start()
+plotter.plot(suptitle="Furuta Pendulum Simulation Results")
 
-plt.show()
+plot_plotly(time_series, theta, alpha, L_arm, L_pend)
+# plot_matplotlib(time_series, theta, alpha, L_arm, L_pend)
