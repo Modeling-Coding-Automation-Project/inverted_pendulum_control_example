@@ -302,7 +302,23 @@ def plot_plotly(time_series: np.ndarray,
 
     var gd = document.getElementById("graph");
     Plotly.newPlot(gd, figData.data, figData.layout,
-      {{scrollZoom: true, displayModeBar: true}});
+      {{scrollZoom: false, displayModeBar: true}});
+
+    // Custom scroll zoom: shrink/expand axis ranges so tick labels stay visible
+    var axisLimit = {axis_limit};
+    var zoomLevel = 1.0;
+    gd.addEventListener("wheel", function(e) {{
+      e.preventDefault();
+      e.stopPropagation();
+      var factor = e.deltaY < 0 ? 0.85 : (1.0 / 0.85);
+      zoomLevel = Math.max(0.05, Math.min(10.0, zoomLevel * factor));
+      var r = axisLimit * zoomLevel;
+      Plotly.relayout(gd, {{
+        "scene.xaxis.range": [-r, r],
+        "scene.yaxis.range": [-r, r],
+        "scene.zaxis.range": [-r, r],
+      }});
+    }}, {{passive: false}});
 
     var slider = document.getElementById("time-slider");
     var display = document.getElementById("time-display");
